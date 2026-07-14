@@ -1,14 +1,18 @@
 import pygame
 import random
 
+# Pygame 초기화 (필수!)
+pygame.init()
+pygame.font.init()
+
 # 설정값
 S_WIDTH, S_HEIGHT = 800, 700
-G_WIDTH, G_HEIGHT = 300, 600  # 실제 게임판 크기 (10x20 칸)
+G_WIDTH, G_HEIGHT = 300, 600
 BLOCK_SIZE = 30
 TOP_LEFT_X = (S_WIDTH - G_WIDTH) // 2
 TOP_LEFT_Y = S_HEIGHT - G_HEIGHT - 50
 
-# 모양 정의 (7가지 테트로미노)
+# 모양 정의
 S = [['.....', '.....', '..00.', '.00..', '.....'], ['.....', '..0..', '..00.', '...0.', '.....']]
 Z = [['.....', '.....', '.00..', '..00.', '.....'], ['.....', '..0..', '.00..', '.0...', '.....']]
 I = [['..0..', '..0..', '..0..', '..0..', '.....'], ['.....', '0000.', '.....', '.....', '.....']]
@@ -19,32 +23,6 @@ T = [['.....', '..0..', '.000.', '.....', '.....'], ['.....', '..0..', '..00.', 
 
 SHAPES = [S, Z, I, O, J, L, T]
 SHAPE_COLORS = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
-
-def draw_score(surface, score):
-    font = pygame.font.SysFont('comicsans', 30)
-    label = font.render(f'Score: {score}', 1, (255,255,255))
-    sx = TOP_LEFT_X + G_WIDTH + 50
-    sy = TOP_LEFT_Y + 50
-    surface.blit(label, (sx, sy))
-
-def draw_next_shape(shape, surface):
-    font = pygame.font.SysFont('comicsans', 30)
-    label = font.render('Next Shape', 1, (255,255,255))
-    sx = TOP_LEFT_X + G_WIDTH + 50
-    sy = TOP_LEFT_Y + G_HEIGHT/2 - 100
-    format = shape.shape[shape.rotation % len(shape.shape)]
-    for i, line in enumerate(format):
-        for j, column in enumerate(line):
-            if column == '0':
-                pygame.draw.rect(surface, shape.color, (sx + j*30, sy + i*30, 30, 30), 0)
-    surface.blit(label, (sx + 10, sy - 30))
-
-def draw_score(surface, score):
-    font = pygame.font.SysFont('comicsans', 30)
-    label = font.render(f'Score: {score}', 1, (255,255,255))
-    sx = TOP_LEFT_X + G_WIDTH + 50
-    sy = TOP_LEFT_Y + 50
-    surface.blit(label, (sx, sy))
 
 class Piece:
     def __init__(self, x, y, shape):
@@ -101,6 +79,25 @@ def clear_rows(grid, locked):
                 locked[newKey] = locked.pop(key)
     return inc
 
+def draw_next_shape(shape, surface):
+    font = pygame.font.SysFont('comicsans', 30)
+    label = font.render('Next Shape', 1, (255,255,255))
+    sx = TOP_LEFT_X + G_WIDTH + 50
+    sy = TOP_LEFT_Y + G_HEIGHT/2 - 100
+    format = shape.shape[shape.rotation % len(shape.shape)]
+    for i, line in enumerate(format):
+        for j, column in enumerate(line):
+            if column == '0':
+                pygame.draw.rect(surface, shape.color, (sx + j*BLOCK_SIZE, sy + i*BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE), 0)
+    surface.blit(label, (sx + 10, sy - 30))
+
+def draw_score(surface, score):
+    font = pygame.font.SysFont('comicsans', 30)
+    label = font.render(f'Score: {score}', 1, (255,255,255))
+    sx = TOP_LEFT_X + G_WIDTH + 50
+    sy = TOP_LEFT_Y + 50
+    surface.blit(label, (sx, sy))
+
 def draw_window(surface, grid):
     surface.fill((0,0,0))
     for y in range(len(grid)):
@@ -117,9 +114,7 @@ def main():
     next_piece = Piece(5, 0, random.choice(SHAPES))
     clock = pygame.time.Clock()
     fall_time = 0
-    
-    # 1. 점수 변수 초기화
-    score = 0 
+    score = 0
 
     while run:
         fall_speed = 0.27
@@ -166,19 +161,19 @@ def main():
             current_piece = next_piece
             next_piece = Piece(5, 0, random.choice(SHAPES))
             change_piece = False
-            
-            # 2. 줄이 지워질 때 점수 누적 (1줄당 10점)
-            rows_cleared = clear_rows(grid, locked_positions)
-            score += rows_cleared * 10 
+            score += clear_rows(grid, locked_positions) * 10
 
-        # 3. 화면 그리기 (기존 그리기에 점수 그리기 추가)
         draw_window(win, grid)
-        draw_score(win, score) # 이 줄이 점수를 화면에 그려줍니다.
-        
+        draw_next_shape(next_piece, win)
+        draw_score(win, score)
         pygame.display.update()
 
         if any(y < 0 for (x, y) in locked_positions):
             run = False
 
     pygame.display.quit()
-    
+
+# 실제 게임 실행 부분
+win = pygame.display.set_mode((S_WIDTH, S_HEIGHT))
+pygame.display.set_caption('기깔나는 테트리스')
+main()
